@@ -1,0 +1,73 @@
+type Query {
+    employee(id: ID!): Employee!
+    employees : [Employee!]
+    tasksForEmployee(id: ID!): [Task]
+    getEmployeesByTeam(team: String!): [Employee!]
+    messages: [Message!]
+}
+
+type Mutation {
+    createTaskForEmployee(input: createTaskInput!): Task
+    addMessage(text: String!): Message
+}
+
+type Subscription {
+    messageAdded: Message
+}
+
+type Employee {
+    _id: ID!
+    firstName: String!
+    lastName: String
+    email: String!
+    password: String!
+    designation: String!
+    mobileNo: String
+    dob: String!
+    address: String
+    address2: String
+    city: String
+    # state: String
+    zip: String
+    # leave: Leave!
+    gender: String!
+    managerId: ID
+    team: String!
+    pan: String!
+}
+
+# type Leave {
+#     cl: Float!
+#     sl: Float!
+#     el: Float
+#     others: Float
+# }
+
+type Task {
+    _id: ID
+    empId: ID!
+    assignedDate: String
+    completionDate: String
+    status: String
+    assigneeId: ID!
+    title: String!
+    description: String
+}
+
+type Message {
+    _id: ID
+    senderEmpId: ID!
+    senderName: String!
+    text: String!,
+    date: String!
+    # receiverEmpIds: [ID!]
+}
+
+input createTaskInput {
+    empId: ID!
+    completionDate: String!
+    status: String!
+    assigneeId: ID!
+    title: String!
+    description: String! 
+}
