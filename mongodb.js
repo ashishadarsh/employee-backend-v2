@@ -112,9 +112,9 @@ async function createTask({empId, assigneeId, completionDate, status, title, des
     const collection = db.collection('tasks');
     const taskempId = new ObjectId(empId);
     const taskassigneeId = new ObjectId(assigneeId);
-    const assignedDate = '2024-12-12'
-    const tasks = await collection.insertOne({empId: taskempId, assigneeId: taskassigneeId, completionDate, status, title, description, assignedDate});
-    return tasks;
+    const assignedDate = new Date().getDate().toString();
+    const task = await collection.insertOne({empId: taskempId, assigneeId: taskassigneeId, completionDate, status, title, description, assignedDate});
+    return task;
   } finally {
     await client.close();
   }

@@ -52,6 +52,7 @@ type Task {
     assigneeId: ID!
     title: String!
     description: String
+    type: String!
 }
 
 type Message {
@@ -69,5 +70,6 @@ input createTaskInput {
     status: String!
     assigneeId: ID!
     title: String!
-    description: String! 
+    description: String!
+    type: String !
 }

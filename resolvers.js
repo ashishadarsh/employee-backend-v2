@@ -12,7 +12,7 @@ export const resolvers = {
                 throw Error('Auth error');
             }
             try {
-                const employee = await getEmployee(user._id);
+                const employee = await getEmployee(new ObjectId(id));
                 if (!employee) {
                     throw new GraphQLError('No employee found')
                 }
