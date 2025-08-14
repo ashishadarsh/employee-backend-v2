@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { getEmployees, getTaskforEmployee, getEmployee, createTask, createMessage, getEmployeesByTeam, getMessages } from "./mongodb.js"
+import { getEmployees, getTaskforEmployee, getEmployee, createTask, createMessage, getEmployeesByTeam, getMessages, getTaskforEmployeeById, updateTask } from "./mongodb.js"
 import { subscribe } from "graphql";
 import { PubSub } from "graphql-subscriptions";
 
@@ -76,13 +76,50 @@ export const resolvers = {
     },
 
     Mutation: {
-        createTaskForEmployee: (_root,{input :{empId, assigneeId, completionDate, status, title, description}}, {user}) => {
-            if(!user) {
+        createTaskForEmployee: async (_root, { input: { _id, empId, completionDate, status, title, description, type } }, { user }) => {
+            if (!user) {
                 throw Error('not found');
             }
-            // return null;
-            return createTask({empId, assigneeId, completionDate, status, title, description})
-        },
+        
+            if (_id) {
+                // Check if task exists
+                const taskExist = await getTaskforEmployeeById(_id);
+        
+                if (taskExist) {
+                    await updateTask({
+                        _id,
+                        empId,
+                        completionDate,
+                        status,
+                        title,
+                        description,
+                        type,
+                        assigneeId: user._id
+                    });
+        
+                    // Return updated task
+                    const task = await getTaskforEmployeeById(_id);
+                    console.log("task from update", task);
+                    return task;
+                }
+            }
+        
+            // Create new task
+            const res = await createTask({
+                empId,
+                completionDate,
+                status,
+                title,
+                description,
+                type,
+                assigneeId: user._id
+            });
+        
+            const task = await getTaskforEmployeeById(res.insertedId);
+            return task;
+        }
+,        
+        
 
         addMessage: async (_root, { text }, { user }) => {
             if (!user) throw unauthorizedError();

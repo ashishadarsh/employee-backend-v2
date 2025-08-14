@@ -65,11 +65,12 @@ type Message {
 }
 
 input createTaskInput {
+    _id: ID
     empId: ID!
     completionDate: String!
     status: String!
-    assigneeId: ID!
+    assigneeId: ID
     title: String!
     description: String!
-    type: String !
+    type: String!
 }

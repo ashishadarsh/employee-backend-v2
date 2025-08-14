@@ -87,6 +87,24 @@ async function getEmployees() {
   }
 }
 
+async function getTaskforEmployeeById(id) {
+  console.log("id from db", id);
+  
+  const client = new MongoClient(uri);
+
+  try {
+    await client.connect();
+    console.log("connected to db");
+    const db = client.db(dbName);
+    const collection = db.collection('tasks');
+    
+    const task = await collection.findOne({ _id: new ObjectId(id) });
+    return task;
+  } finally {
+    await client.close();
+  }
+}
+
 async function getTaskforEmployee(id) {
   const client = new MongoClient(uri);
 
@@ -102,7 +120,7 @@ async function getTaskforEmployee(id) {
   }
 }
 
-async function createTask({empId, assigneeId, completionDate, status, title, description}) {
+async function createTask({empId,assigneeId, completionDate, status, title, description, type}) {
   const client = new MongoClient(uri);
 
   try {
@@ -112,8 +130,34 @@ async function createTask({empId, assigneeId, completionDate, status, title, des
     const collection = db.collection('tasks');
     const taskempId = new ObjectId(empId);
     const taskassigneeId = new ObjectId(assigneeId);
-    const assignedDate = new Date().getDate().toString();
-    const task = await collection.insertOne({empId: taskempId, assigneeId: taskassigneeId, completionDate, status, title, description, assignedDate});
+    const assignedDate = new Date().toISOString().split("T")[0];
+    const task = await collection.insertOne({empId: taskempId, assigneeId: taskassigneeId, completionDate, status, title, description, assignedDate, type});
+    return task;
+  } finally {
+    await client.close();
+  }
+}
+
+async function updateTask({_id, empId, assigneeId, completionDate, status, title, description, type}) {
+  const client = new MongoClient(uri);
+
+  try {
+    await client.connect();
+    console.log("connected to db");
+    const db = client.db(dbName);
+    const collection = db.collection('tasks');
+    const taskassigneeId = new ObjectId(assigneeId);
+    const task = await collection.updateOne({_id: new ObjectId(_id)}, {
+      $set: {
+        empId: new ObjectId(empId),
+        assigneeId: taskassigneeId,
+        completionDate: completionDate,
+        status: status,
+        title: title,
+        description: description,
+        type: type
+      }
+    });
     return task;
   } finally {
     await client.close();
@@ -154,4 +198,4 @@ async function signup({email, password, firstName, lastName,  dob, mobileNo, pan
   }
 }
 
-export { getEmployees, getTaskforEmployee, getEmployee , createTask, getEmployeeByEmail, signup, getEmployeesByTeam, getMessages, createMessage};
+export { getEmployees, getTaskforEmployee, getTaskforEmployeeById, updateTask, getEmployee , createTask, getEmployeeByEmail, signup, getEmployeesByTeam, getMessages, createMessage};
