@@ -1,201 +1,133 @@
-
 import { MongoClient, ObjectId, ServerApiVersion } from 'mongodb';
 
-// const uri = "mongodb+srv://ashuadarsh001:NG1vDXjagDTCAE5K@cluster0.5e8yt.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const uri = "mongodb+srv://ashuadarsh001:tiWVrEuhYDBwO6mM@employee.efvl2.mongodb.net/?retryWrites=true&w=majority&appName=employee";
-//const uri = 'mongodb+srv://ashuadarsh001:e4XtT1aqDxkOyISD@employee-management.epkpq.mongodb.net/?retryWrites=true&w=majority&appName=employee-management';
 const dbName = 'employee-management-dev';
 
-async function getEmployee(id) {
-  const client = new MongoClient(uri);
-  const uid = new ObjectId(id);
-  try {
+// Create a single MongoClient instance (connection pooling)
+const client = new MongoClient(uri, {
+  serverApi: ServerApiVersion.v1,
+  maxPoolSize: 20, // up to 20 concurrent operations
+});
+
+let dbInstance;
+
+async function connectDB() {
+  if (!dbInstance) {
     await client.connect();
-    console.log("connected to db");
-    const db = client.db(dbName);
-    const collection = db.collection('employee');
-    const employee = await collection.findOne({_id: uid});
-    return employee;
-  } finally {
-    await client.close();
+    dbInstance = client.db(dbName);
+    console.log("✅ Connected to MongoDB");
   }
+  return dbInstance;
+}
+
+// Utility: get collection quickly
+async function col(name) {
+  const db = await connectDB();
+  return db.collection(name);
+}
+
+// ===== Functions =====
+
+async function getEmployee(id) {
+  return await (await col('employee')).findOne({ _id: new ObjectId(id) });
 }
 
 async function getEmployeesByTeam(team) {
-  const client = new MongoClient(uri);
-  // const uid = new ObjectId(id);
-  try {
-    await client.connect();
-    console.log("connected to db");
-    const db = client.db(dbName);
-    const collection = db.collection('employee');
-    const employees = await collection.find({team: team}).toArray();
-    return employees;
-  } finally {
-    await client.close();
-  }
+  return await (await col('employee')).find({ team }).toArray();
 }
 
 async function getEmployeeByEmail(email) {
-  const client = new MongoClient(uri);
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const collection = db.collection('employee');
-    const employee = await collection.findOne({email: email});
-    return employee;
-  } finally {
-    await client.close();
-  }
+  return await (await col('employee')).findOne({ email });
 }
 
 async function getMessages() {
-  const client = new MongoClient(uri);
-  console.log({client});
-  
-  try {
-    console.log("inside try block");
-    
-    await client.connect();
-    console.log("connected to db");
-    const db = client.db(dbName);
-    const collection = db.collection('messages');
-    const messages = await collection.find().toArray();
-    console.log({messages});
-    
-    return messages;
-  } finally {
-    await client.close();
-  }
+  return await (await col('messages')).find().toArray();
 }
 
 async function getEmployees() {
-  const client = new MongoClient(uri);
-  console.log({client});
-  
-  try {
-    console.log("inside try block");
-    
-    await client.connect();
-    console.log("connected to db");
-    const db = client.db(dbName);
-    const collection = db.collection('employee');
-    const employees = await collection.find().toArray();
-    return employees;
-  } finally {
-    await client.close();
-  }
+  return await (await col('employee')).find().toArray();
 }
 
 async function getTaskforEmployeeById(id) {
-  console.log("id from db", id);
-  
-  const client = new MongoClient(uri);
-
-  try {
-    await client.connect();
-    console.log("connected to db");
-    const db = client.db(dbName);
-    const collection = db.collection('tasks');
-    
-    const task = await collection.findOne({ _id: new ObjectId(id) });
-    return task;
-  } finally {
-    await client.close();
-  }
+  return await (await col('tasks')).findOne({ _id: new ObjectId(id) });
 }
 
 async function getTaskforEmployee(id) {
-  const client = new MongoClient(uri);
-
-  try {
-    await client.connect();
-    console.log("connected to db");
-    const db = client.db(dbName);
-    const collection = db.collection('tasks');
-    const tasks = await collection.find({empId: id}).toArray();
-    return tasks;
-  } finally {
-    await client.close();
-  }
+  return await (await col('tasks')).find({ empId: id }).toArray();
 }
 
-async function createTask({empId,assigneeId, completionDate, status, title, description, type}) {
-  const client = new MongoClient(uri);
-
-  try {
-    await client.connect();
-    console.log("connected to db");
-    const db = client.db(dbName);
-    const collection = db.collection('tasks');
-    const taskempId = new ObjectId(empId);
-    const taskassigneeId = new ObjectId(assigneeId);
-    const assignedDate = new Date().toISOString().split("T")[0];
-    const task = await collection.insertOne({empId: taskempId, assigneeId: taskassigneeId, completionDate, status, title, description, assignedDate, type});
-    return task;
-  } finally {
-    await client.close();
-  }
+async function createTask({ empId, assigneeId, completionDate, status, title, description, type }) {
+  const assignedDate = new Date().toISOString().split("T")[0];
+  return await (await col('tasks')).insertOne({
+    empId: new ObjectId(empId),
+    assigneeId: new ObjectId(assigneeId),
+    completionDate,
+    status,
+    title,
+    description,
+    assignedDate,
+    type
+  });
 }
 
-async function updateTask({_id, empId, assigneeId, completionDate, status, title, description, type}) {
-  const client = new MongoClient(uri);
-
-  try {
-    await client.connect();
-    console.log("connected to db");
-    const db = client.db(dbName);
-    const collection = db.collection('tasks');
-    const taskassigneeId = new ObjectId(assigneeId);
-    const task = await collection.updateOne({_id: new ObjectId(_id)}, {
+async function updateTask({ _id, empId, assigneeId, completionDate, status, title, description, type }) {
+  return await (await col('tasks')).updateOne(
+    { _id: new ObjectId(_id) },
+    {
       $set: {
         empId: new ObjectId(empId),
-        assigneeId: taskassigneeId,
-        completionDate: completionDate,
-        status: status,
-        title: title,
-        description: description,
-        type: type
+        assigneeId: new ObjectId(assigneeId),
+        completionDate,
+        status,
+        title,
+        description,
+        type
       }
-    });
-    return task;
-  } finally {
-    await client.close();
-  }
+    }
+  );
 }
 
 async function createMessage(empId, firstName, text) {
-  const client = new MongoClient(uri);
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const collection = db.collection('messages');
-    console.log(empId, text); 
-    const date = new Date().toISOString();
-    const message = await collection.insertOne({senderEmpId: empId, senderName: firstName, text: text, date: date});
-    const addedMsg = await collection.findOne({_id: message.insertedId})
-    return addedMsg;
-  } finally {
-    await client.close();
-  }
+  const date = new Date().toISOString();
+  const collection = await col('messages');
+  const { insertedId } = await collection.insertOne({
+    senderEmpId: empId,
+    senderName: firstName,
+    text,
+    date
+  });
+  return await collection.findOne({ _id: insertedId });
 }
 
-async function signup({email, password, firstName, lastName,  dob, mobileNo, pan, gender, team, designation, address, address2, city, zip}) {
-  console.log("email from db", email);
-  
-  const client = new MongoClient(uri);
-
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const collection = db.collection('employee');
-    const employee = await collection.insertOne({email: email, password: password, firstName: firstName, lastName: lastName, designation: designation, mobileNo: mobileNo, dob: dob, address: address, gender: gender, pan: pan, address2: address2, city: city, zip: zip, team: team});
-    console.log({employee});
-    
-    return employee;
-  } finally {
-    await client.close();
-  }
+async function signup({ email, password, firstName, lastName, dob, mobileNo, pan, gender, team, designation, address, address2, city, zip }) {
+  return await (await col('employee')).insertOne({
+    email,
+    password,
+    firstName,
+    lastName,
+    designation,
+    mobileNo,
+    dob,
+    address,
+    gender,
+    pan,
+    address2,
+    city,
+    zip,
+    team
+  });
 }
 
-export { getEmployees, getTaskforEmployee, getTaskforEmployeeById, updateTask, getEmployee , createTask, getEmployeeByEmail, signup, getEmployeesByTeam, getMessages, createMessage};
+export {
+  getEmployees,
+  getTaskforEmployee,
+  getTaskforEmployeeById,
+  updateTask,
+  getEmployee,
+  createTask,
+  getEmployeeByEmail,
+  signup,
+  getEmployeesByTeam,
+  getMessages,
+  createMessage
+};
