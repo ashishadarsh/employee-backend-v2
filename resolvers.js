@@ -1,4 +1,4 @@
-import { getEmployees, getTaskforEmployee, getEmployee, createTask, createMessage, getEmployeesByTeam, getMessages, getTaskforEmployeeById, updateTask } from "./mongodb.js";
+import { getEmployees, getTaskforEmployee, getEmployee, createTask, createMessage, createUnicastMessage, getEmployeesByTeam, getMessages, getTaskforEmployeeById, updateTask, getUnicastMessages } from "./mongodb.js";
 import { PubSub } from "graphql-subscriptions";
 import { GraphQLError } from "graphql";
 
@@ -63,6 +63,11 @@ export const resolvers = {
       requireAuth(user);
       return getMessages();
     },
+    UnicastMessages: async (_root, { senderEmpId, receiverEmpId }, { user }) => {
+      requireAuth(user);
+      const data = await getUnicastMessages(senderEmpId, receiverEmpId);
+      return data;
+    },
   },
 
   Mutation: {
@@ -110,11 +115,27 @@ export const resolvers = {
       pubSub.publish("MESSAGE_ADDED", { messageAdded: message });
       return message;
     },
+
+    addUnicastMessage: async (_root, { input: { text, senderEmpId, receiverEmpId } }, { user }) => {
+      requireAuth(user);
+      const employee = await getEmployee(senderEmpId);
+    //   if (!employee) {
+    //     throw new GraphQLError("Employee not found", {
+    //       extensions: { code: "NOT_FOUND" },
+    //     });
+    //   }
+      const unicastMessage = await createUnicastMessage(text, senderEmpId, receiverEmpId, employee.firstName);
+      pubSub.publish("UNICAST_MESSAGE_ADDED", { unicastMessageAdded: unicastMessage });
+      return unicastMessage;
+    },
   },
 
   Subscription: {
     messageAdded: {
       subscribe: () => pubSub.asyncIterableIterator("MESSAGE_ADDED"),
+    },
+    unicastMessageAdded: {
+      subscribe: () => pubSub.asyncIterableIterator("UNICAST_MESSAGE_ADDED"),
     },
   },
 };

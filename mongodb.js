@@ -41,8 +41,22 @@ async function getEmployeeByEmail(email) {
 }
 
 async function getMessages() {
-  return await (await col('messages')).find().toArray();
+  return await (await col('messages')).find({receiverEmpId: {$exists: false}}).toArray();
 }
+async function getUnicastMessages(senderEmpId, receiverEmpId) {
+  const senderId = new ObjectId(senderEmpId);
+  const receiverId = new ObjectId(receiverEmpId);
+
+  const messages = await (await col('messages')).find({
+    $or: [
+      { senderEmpId: senderId, receiverEmpId: receiverId },
+      { senderEmpId: receiverId, receiverEmpId: senderId }
+    ],
+    receiverEmpId: { $exists: true } // ensures receiverEmpId field exists
+  }).sort({ date: 1 }).toArray(); // optional: sort by date ascending
+  return messages;
+}
+
 
 async function getEmployees() {
   return await (await col('employee')).find().toArray();
@@ -99,6 +113,19 @@ async function createMessage(empId, firstName, text) {
   return await collection.findOne({ _id: insertedId });
 }
 
+async function createUnicastMessage(text, senderEmpId, receiverEmpId, firstName) {
+  const date = new Date().toISOString();
+  const collection = await col('messages');
+  const { insertedId } = await collection.insertOne({
+    senderEmpId: new ObjectId(senderEmpId),
+    senderName: firstName,
+    text,
+    date,
+    receiverEmpId: new ObjectId(receiverEmpId)
+  });
+  return await collection.findOne({ _id: insertedId });
+}
+
 async function signup({ email, password, firstName, lastName, dob, mobileNo, pan, gender, team, designation, address, address2, city, zip }) {
   return await (await col('employee')).insertOne({
     email,
@@ -129,5 +156,7 @@ export {
   signup,
   getEmployeesByTeam,
   getMessages,
-  createMessage
+  createMessage,
+  createUnicastMessage,
+  getUnicastMessages
 };

@@ -4,15 +4,18 @@ type Query {
     tasksForEmployee(id: ID!): [Task]
     getEmployeesByTeam(team: String!): [Employee!]
     messages: [Message!]
+    UnicastMessages(senderEmpId: ID!, receiverEmpId: ID!): [UnicastMessage!]
 }
 
 type Mutation {
     createTaskForEmployee(input: createTaskInput!): Task
     addMessage(text: String!): Message
+    addUnicastMessage(input: createUnicastMessageInput!): UnicastMessage
 }
 
 type Subscription {
     messageAdded: Message
+    unicastMessageAdded: UnicastMessage
 }
 
 type Employee {
@@ -64,6 +67,15 @@ type Message {
     # receiverEmpIds: [ID!]
 }
 
+type UnicastMessage {
+    _id: ID
+    senderEmpId: ID!
+    senderName: String!
+    text: String!,
+    date: String!
+    receiverEmpId: ID!
+}
+
 input createTaskInput {
     _id: ID
     empId: ID!
@@ -73,4 +85,10 @@ input createTaskInput {
     title: String!
     description: String!
     type: String!
+}
+
+input createUnicastMessageInput {
+    text: String!
+    senderEmpId: ID!
+    receiverEmpId: ID!
 }
