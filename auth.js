@@ -32,7 +32,7 @@ export async function handleLogin(req, res) {
   
   if (!user) return res.status(401).json({ error: "invalid credentials" });
 
-  const isMatch = await bcrypt.compare(password, user.password);
+  const isMatch = password === user.password;
   if (!isMatch) return res.status(401).json({ error: "invalid credentials" });
 
   const claims = { sub: user._id.toString(), email: user.email };
