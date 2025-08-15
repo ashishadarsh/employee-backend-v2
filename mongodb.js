@@ -105,6 +105,8 @@ export async function getTaskforEmployeeById(id) {
 }
 
 export async function getTaskforEmployee(id) {
+  console.log("Fetching tasks for employee with ID:", id);
+  
   return await (await col("tasks")).find({ empId: id }).toArray();
 }
 
