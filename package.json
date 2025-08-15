@@ -2,6 +2,10 @@
     "name": "backend-server",
     "private": true,
     "type": "module",
+    "engines": { "node": ">=18" },
+    "scripts": {
+        "start": "node server.js"
+    },
     "dependencies": {
         "@apollo/server": "^4.11.2",
         "@graphql-tools/schema": "^10.0.14",

@@ -1,50 +1,130 @@
-import { ApolloServer } from "@apollo/server";
+// server.js
+import express from "express";
+import cors from "cors";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { createServer as createHttpServer } from "node:http";
 
+import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
-import cors from 'cors';
-import {readFile} from 'node:fs/promises'
-import express from 'express'
-import { createServer as createHttpServer} from 'node:http'
+import { makeExecutableSchema } from "@graphql-tools/schema";
+import { WebSocketServer } from "ws";
 import { useServer as useWsServer } from "graphql-ws/lib/use/ws";
 
-import {resolvers} from './resolvers.js'
+import * as db from "./mongodb.js";
 import { authMiddleware, handleLogin, handleSignUp } from "./auth.js";
-import { getEmployee } from "./mongodb.js";
-import { WebSocketServer } from "ws";
-import { makeExecutableSchema } from "@graphql-tools/schema";
+import { resolvers } from "./resolvers.js";
+import { PubSub } from "graphql-subscriptions";
 
-const PORT = 9000;
+// ----- config -----
+const PORT = process.env.PORT || 9000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
+// ----- read schema.graphql (robust path) -----
+const schemaPath = resolve(__dirname, "schema.graphql");
+const typeDefs = await readFile(schemaPath, "utf8");
+
+// ----- prepare executable schema (for both HTTP & WS) -----
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+// ----- app + middleware -----
 const app = express();
 
-app.use(cors(), express.json(), authMiddleware);
+// CORS origins from env (comma-separated), allow no-origin (Postman)
+const corsOrigins = (process.env.CORS_ORIGIN || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-app.post('/login', handleLogin);
-app.post('/signup', handleSignUp);
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin || corsOrigins.length === 0 || corsOrigins.includes(origin)) {
+        return cb(null, true);
+      }
+      return cb(new Error(`CORS denied for ${origin}`));
+    },
+    credentials: true,
+  })
+);
 
-const typeDefs = await readFile('./schema.graphql', 'utf8');
-const schema = makeExecutableSchema({ typeDefs, resolvers })
+app.use(express.json());
+app.use(authMiddleware); // attach req.auth if token present
 
-async function getContext({req}) {
-    if(req.auth) {
-        const user = await getEmployee(req.auth.sub);
-        return {user};
-    }
-    return {};
-}
+// ----- public auth routes -----
+app.post("/login", handleLogin);
+app.post("/signup", handleSignUp);
 
-const apolloServer = new ApolloServer({ schema });
-await apolloServer.start();
-app.use('/graphql', expressMiddleware(apolloServer, {context: getContext}));
+// ----- Apollo Server (HTTP) -----
+const apollo = new ApolloServer({
+  schema
+});
 
-const httpServer = createHttpServer(app)
+await apollo.start();
 
-const wsServer = new WebSocketServer({ server: httpServer, path: '/graphql' })
+// expressMiddleware expects a function returning context or an object
+app.use(
+  "/graphql",
+  express.json(),
+  expressMiddleware(apollo, {
+    context: async ({ req }) => {
+      // Pass req.auth (if present) and helpers to resolvers
+      return {
+        auth: req.auth || null,
+        loaders: {}, // placeholder for dataloader if needed
+      };
+    },
+  })
+);
 
-useWsServer({ schema }, wsServer)
+// ----- HTTP server and WS server for subscriptions -----
+const httpServer = createHttpServer(app);
 
-httpServer.listen({port: PORT}, ()=> {
-    console.log(`Server running at ${PORT}`);
-    console.log(`GraphQl endpoint: http://localhost:${PORT}/graphql`);
-    
-})
+// create WebSocket server and bind graphql-ws to it
+const wsServer = new WebSocketServer({
+  server: httpServer,
+  path: "/graphql",
+});
+
+// graphql-ws needs an onConnect-like context function; we'll provide a simple one
+const serverCleanup = useWsServer(
+  {
+    schema,
+    // connectionParams and extra are available on 'onConnect' in some setups.
+    // graphql-ws will call the execute/subscribe directly using the schema.
+    context: (ctx, msg, args) => {
+      // No automatic auth here. If you want auth for subscriptions,
+      // include token in connectionParams and verify here.
+      // e.g., const token = ctx.connectionParams?.authorization
+      return {};
+    },
+  },
+  wsServer
+);
+
+// ----- Start HTTP server -----
+httpServer.listen(PORT, async () => {
+  // ensure DB connection
+  try {
+    await db.connectDB();
+  } catch (err) {
+    console.error("Failed to connect to DB on startup:", err);
+    // still start - it may reconnect later
+  }
+
+  console.log(`Server running on port ${PORT}`);
+  console.log(`GraphQL HTTP endpoint: http://localhost:${PORT}/graphql`);
+  console.log(`GraphQL WS endpoint  : wss://<your-domain>:${PORT}/graphql`);
+});
+
+// ----- Graceful shutdown -----
+process.on("SIGTERM", async () => {
+  console.log("SIGTERM received: shutting down");
+  serverCleanup.dispose();
+  httpServer.close(() => {
+    console.log("HTTP server closed");
+    process.exit(0);
+  });
+});
