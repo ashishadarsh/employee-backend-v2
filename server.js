@@ -71,6 +71,9 @@ app.use(authMiddleware); // attach req.auth if token present
 // ----- public auth routes -----
 app.post("/login", handleLogin);
 app.post("/signup", handleSignUp);
+app.get("/", (req, res) => {
+    res.send("✅ Employee backend is running");
+  });
 
 // ----- Apollo Server (HTTP) -----
 const apollo = new ApolloServer({
