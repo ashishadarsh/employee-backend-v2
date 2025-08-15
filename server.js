@@ -90,7 +90,7 @@ app.use(
     context: async ({ req }) => {
       // Pass req.auth (if present) and helpers to resolvers
       return {
-        auth: req.auth || null,
+        user: req.auth || null,
         loaders: {}, // placeholder for dataloader if needed
       };
     },
