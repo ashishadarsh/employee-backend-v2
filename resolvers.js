@@ -53,6 +53,7 @@ export const resolvers = {
     tasksForEmployee: (_root, _args, { user }) =>
       handleQuery(
         async () => {
+            console.log("user in tasksForEmployee resolver:", user);
           requireAuth(user);
           return getTaskforEmployee(user._id);
         },
