@@ -1,5 +1,6 @@
 // server.js
 import express from "express";
+import helmet from "helmet";
 import cors from "cors";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -31,6 +32,20 @@ const schema = makeExecutableSchema({ typeDefs, resolvers });
 
 // ----- app + middleware -----
 const app = express();
+
+// ✅ Helmet with CSP allowing Google Fonts
+app.use(
+    helmet.contentSecurityPolicy({
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'", ...((process.env.CORS_ORIGIN || "").split(",").map(s => s.trim()).filter(Boolean))],
+      },
+    })
+  );
 
 // CORS origins from env (comma-separated), allow no-origin (Postman)
 const corsOrigins = (process.env.CORS_ORIGIN || "")
