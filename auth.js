@@ -28,6 +28,8 @@ export async function handleLogin(req, res) {
   if (!email || !password) return res.status(400).json({ error: "email & password required" });
 
   const user = await db.getEmployeeByEmail(email);
+  console.log('login user', user);
+  
   if (!user) return res.status(401).json({ error: "invalid credentials" });
 
   const isMatch = await bcrypt.compare(password, user.password);
