@@ -41,6 +41,8 @@ export const resolvers = {
     getEmployeesByTeam: (_root, _args, { user }) =>
       handleQuery(
         async () => {
+            console.log("user in getEmployeesByTeam resolver:", user.team);
+            
           requireAuth(user);
           return getEmployeesByTeam(user.team);
         },

@@ -89,13 +89,13 @@ app.use(
   expressMiddleware(apollo, {
     context: async ({ req }) => {
       // Pass req.auth (if present) and helpers to resolvers
-      return {
-        user: {
-            _id: req.auth.sub, // map sub → _id
-            email: req.auth.email,
-          },
-        loaders: {}, // placeholder for dataloader if needed
-      };
+      if (!req.auth) return { user: null, loaders: {} };
+
+      // Fetch full user info from DB
+      const fullUser = await db.getEmployee(req.auth.sub);
+      if (!fullUser) return { user: null, loaders: {} };
+
+      return { user: fullUser, loaders: {} };
     },
   })
 );
