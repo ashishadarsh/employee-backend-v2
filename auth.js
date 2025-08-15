@@ -1,6 +1,6 @@
 // auth.js
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcrypt from 'bcryptjs';
 import * as db from "./mongodb.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "please-change-this-in-prod";
