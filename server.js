@@ -90,10 +90,7 @@ app.use(
     context: async ({ req }) => {
       // Pass req.auth (if present) and helpers to resolvers
       return {
-        user: {
-            _id: req.auth.sub, // map sub → _id
-            email: req.auth.email,
-          },
+        user: req.auth.sub,
         loaders: {}, // placeholder for dataloader if needed
       };
     },

@@ -44,6 +44,8 @@ export async function getEmployees() {
 }
 
 export async function getEmployeesByTeam(team) {
+  console.log("Fetching employees for team:", team);
+  
   return await (await col("employee")).find({ team }).toArray();
 }
 
@@ -107,7 +109,7 @@ export async function getTaskforEmployeeById(id) {
 export async function getTaskforEmployee(id) {
   console.log("Fetching tasks for employee with ID:", id);
   
-  return await (await col("tasks")).find({ empId: id }).toArray();
+  return await (await col("tasks")).find({ empId: new ObjectId(id) }).toArray();
 }
 
 export async function createTask({ empId, assigneeId, completionDate, status, title, description, type }) {
