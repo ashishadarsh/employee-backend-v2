@@ -67,7 +67,7 @@ async function getTaskforEmployeeById(id) {
 }
 
 async function getTaskforEmployee(id) {
-  return await (await col('tasks')).find({ empId: id }).toArray();
+  return await (await col('tasks')).find({ empId: id }).sort({ priority: -1, pinned: -1, completionDate: 1 }).toArray();
 }
 
 async function deleteTaskFromDb(id) {
@@ -79,36 +79,33 @@ async function deleteTaskFromDb(id) {
   return res;
 }
 
-async function createTask({ empId, assigneeId, completionDate, status, title, description, type }) {
+async function upsertTask({ _id, empId, assigneeId, completionDate, status, title, description, type, priority, pinned }) {
+  const collection = await col("tasks");
   const assignedDate = new Date().toISOString().split("T")[0];
-  return await (await col('tasks')).insertOne({
-    empId: new ObjectId(empId),
-    assigneeId: new ObjectId(assigneeId),
-    completionDate,
-    status,
-    title,
-    description,
-    assignedDate,
-    type
-  });
+
+  const filter = _id ? { _id: new ObjectId(_id) } : { _id: new ObjectId() };
+
+  const update = {
+    $set: {
+      empId: new ObjectId(empId),
+      assigneeId: new ObjectId(assigneeId),
+      completionDate,
+      status,
+      title,
+      description,
+      type,
+      priority: priority ?? false,
+      pinned: pinned ?? false,
+      assignedDate,
+    },
+  };
+
+  const options = { returnDocument: "after", upsert: true };
+
+  return await collection.findOneAndUpdate(filter, update, options);
+  r
 }
 
-async function updateTask({ _id, empId, assigneeId, completionDate, status, title, description, type }) {
-  return await (await col('tasks')).updateOne(
-    { _id: new ObjectId(_id) },
-    {
-      $set: {
-        empId: new ObjectId(empId),
-        assigneeId: new ObjectId(assigneeId),
-        completionDate,
-        status,
-        title,
-        description,
-        type
-      }
-    }
-  );
-}
 
 async function createMessage(empId, firstName, text) {
   const date = new Date().toISOString();
@@ -158,9 +155,7 @@ export {
   getEmployees,
   getTaskforEmployee,
   getTaskforEmployeeById,
-  updateTask,
   getEmployee,
-  createTask,
   getEmployeeByEmail,
   signup,
   getEmployeesByTeam,
@@ -168,5 +163,6 @@ export {
   createMessage,
   createUnicastMessage,
   getUnicastMessages,
-  deleteTaskFromDb
+  deleteTaskFromDb,
+  upsertTask
 };
