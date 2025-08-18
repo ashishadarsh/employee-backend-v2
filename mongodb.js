@@ -64,11 +64,6 @@ async function getUnicastMessages(senderEmpId, receiverEmpId) {
   return messages;
 }
 
-
-async function getEmployees() {
-  return await (await col('employee')).find().toArray();
-}
-
 async function getTaskforEmployeeById(id) {
   return await (await col('tasks')).findOne({ _id: new ObjectId(id) });
 }
