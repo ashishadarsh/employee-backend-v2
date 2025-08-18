@@ -70,6 +70,15 @@ async function getTaskforEmployee(id) {
   return await (await col('tasks')).find({ empId: id }).toArray();
 }
 
+async function deleteTaskFromDb(id) {
+  const _id = typeof id === 'string' ? new ObjectId(id) : id;
+  const res = await (await col('tasks')).deleteOne({ _id });
+  if (res.deletedCount === 0) {
+    throw new Error('Task not found');
+  }
+  return res;
+}
+
 async function createTask({ empId, assigneeId, completionDate, status, title, description, type }) {
   const assignedDate = new Date().toISOString().split("T")[0];
   return await (await col('tasks')).insertOne({
@@ -158,5 +167,6 @@ export {
   getMessages,
   createMessage,
   createUnicastMessage,
-  getUnicastMessages
+  getUnicastMessages,
+  deleteTaskFromDb
 };

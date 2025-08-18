@@ -1,4 +1,4 @@
-import { getEmployees, getTaskforEmployee, getEmployee, createTask, createMessage, createUnicastMessage, getEmployeesByTeam, getMessages, getTaskforEmployeeById, updateTask, getUnicastMessages } from "./mongodb.js";
+import { getEmployees, getTaskforEmployee, getEmployee, createTask, createMessage, createUnicastMessage, getEmployeesByTeam, getMessages, getTaskforEmployeeById, updateTask, getUnicastMessages, deleteTaskFromDb } from "./mongodb.js";
 import { PubSub } from "graphql-subscriptions";
 import { GraphQLError } from "graphql";
 
@@ -58,7 +58,6 @@ export const resolvers = {
         },
         "No tasks for employee found"
       ),
-
     messages: (_root, _args, { user }) => {
       requireAuth(user);
       return getMessages();
@@ -108,6 +107,23 @@ export const resolvers = {
 
       return getTaskforEmployeeById(res.insertedId);
     },
+
+    deleteTask: async (_root, { id }, { user }) => {
+        requireAuth(user);
+        const task = await getTaskforEmployeeById(id);
+        if (!task) {
+            throw new GraphQLError("Task not found", {
+                extensions: { code: "NOT_FOUND" },
+            });
+        }
+        const result = await deleteTaskFromDb(id);
+        if (result.deletedCount === 0) {
+            throw new GraphQLError("Failed to delete task", {
+                extensions: { code: "INTERNAL_SERVER_ERROR" },
+            });
+        }
+        return { success: true, message: "Task deleted successfully" };
+        },
 
     addMessage: async (_root, { text }, { user }) => {
       requireAuth(user);
