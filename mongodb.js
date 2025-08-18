@@ -35,45 +35,46 @@ export async function getEmployee(id) {
   return await (await col("employee")).findOne({ _id: new ObjectId(id) });
 }
 
-export async function getEmployeeByEmail(email) {
-  return await (await col("employee")).findOne({ email });
+async function getEmployeesByTeam(team) {
+  return await (await col('employee')).find({ team }).toArray();
 }
 
 export async function getEmployees() {
   return await (await col("employee")).find().toArray();
 }
 
-export async function getEmployeesByTeam(team) {
-  console.log("Fetching employees for team:", team);
-  
-  return await (await col("employee")).find({ team }).toArray();
+async function getEmployeeByEmail(email) {
+  return await (await col('employee')).findOne({ email });
 }
 
-export async function getMessages() {
-  return await (await col("messages")).find({ receiverEmpId: { $exists: false } }).toArray();
+async function getMessages() {
+  return await (await col('messages')).find({receiverEmpId: {$exists: false}}).toArray();
 }
-
-export async function getUnicastMessages(senderEmpId, receiverEmpId) {
+async function getUnicastMessages(senderEmpId, receiverEmpId) {
   const senderId = new ObjectId(senderEmpId);
   const receiverId = new ObjectId(receiverEmpId);
 
-  const messages = await (await col("messages"))
-    .find({
-      $or: [
-        { senderEmpId: senderId, receiverEmpId: receiverId },
-        { senderEmpId: receiverId, receiverEmpId: senderId },
-      ],
-      receiverEmpId: { $exists: true },
-    })
-    .sort({ date: 1 })
-    .toArray();
+  const messages = await (await col('messages')).find({
+    $or: [
+      { senderEmpId: senderId, receiverEmpId: receiverId },
+      { senderEmpId: receiverId, receiverEmpId: senderId }
+    ],
+    receiverEmpId: { $exists: true } // ensures receiverEmpId field exists
+  }).sort({ date: 1 }).toArray(); // optional: sort by date ascending
   return messages;
 }
 
-export async function signup(userObj) {
-  const collection = await col("employee");
-  const result = await collection.insertOne(userObj);
-  return result; // caller may fetch created doc by insertedId
+
+async function getEmployees() {
+  return await (await col('employee')).find().toArray();
+}
+
+async function getTaskforEmployeeById(id) {
+  return await (await col('tasks')).findOne({ _id: new ObjectId(id) });
+}
+
+async function getTaskforEmployee(id) {
+  return await (await col('tasks')).find({ empId: id }).toArray();
 }
 
 async function deleteTaskFromDb(id) {
@@ -87,7 +88,7 @@ async function deleteTaskFromDb(id) {
 
 async function createTask({ empId, assigneeId, completionDate, status, title, description, type }) {
   const assignedDate = new Date().toISOString().split("T")[0];
-  return await (await col("tasks")).insertOne({
+  return await (await col('tasks')).insertOne({
     empId: new ObjectId(empId),
     assigneeId: new ObjectId(assigneeId),
     completionDate,
@@ -95,12 +96,12 @@ async function createTask({ empId, assigneeId, completionDate, status, title, de
     title,
     description,
     assignedDate,
-    type,
+    type
   });
 }
 
-export async function updateTask({ _id, empId, assigneeId, completionDate, status, title, description, type }) {
-  return await (await col("tasks")).updateOne(
+async function updateTask({ _id, empId, assigneeId, completionDate, status, title, description, type }) {
+  return await (await col('tasks')).updateOne(
     { _id: new ObjectId(_id) },
     {
       $set: {
@@ -110,8 +111,8 @@ export async function updateTask({ _id, empId, assigneeId, completionDate, statu
         status,
         title,
         description,
-        type,
-      },
+        type
+      }
     }
   );
 }
@@ -176,3 +177,4 @@ export {
   getUnicastMessages,
   deleteTaskFromDb
 };
+
