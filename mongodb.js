@@ -30,7 +30,7 @@ async function col(name) {
   return db.collection(name);
 }
 
-export async function getEmployee(id) {
+async function getEmployee(id) {
   if (!ObjectId.isValid(id)) return null;
   return await (await col("employee")).findOne({ _id: new ObjectId(id) });
 }
@@ -39,7 +39,7 @@ async function getEmployeesByTeam(team) {
   return await (await col('employee')).find({ team }).toArray();
 }
 
-export async function getEmployees() {
+async function getEmployees() {
   return await (await col("employee")).find().toArray();
 }
 
