@@ -1,4 +1,4 @@
-import { getEmployees, getTaskforEmployee, getEmployee, createTask, createMessage, createUnicastMessage, getEmployeesByTeam, getMessages, getTaskforEmployeeById, updateTask, getUnicastMessages, deleteTaskFromDb } from "./mongodb.js";
+import { getEmployees, getTaskforEmployee, getEmployee, createMessage, createUnicastMessage, getEmployeesByTeam, getMessages, getTaskforEmployeeById, getUnicastMessages, deleteTaskFromDb, upsertTask } from "./mongodb.js";
 import { PubSub } from "graphql-subscriptions";
 import { GraphQLError } from "graphql";
 
@@ -75,40 +75,26 @@ export const resolvers = {
   Mutation: {
     createTaskForEmployee: async (
       _root,
-      { input: { _id, empId, completionDate, status, title, description, type } },
+      { input: { _id, empId, completionDate, status, title, description, type, priority, pinned } },
       { user }
     ) => {
       requireAuth(user);
-
       if (_id) {
-        const taskExist = await getTaskforEmployeeById(_id);
-
-        if (taskExist) {
-          await updateTask({
+        const res = await upsertTask({
             _id,
             empId,
+            assigneeId: user._id,
             completionDate,
             status,
             title,
             description,
             type,
-            assigneeId: user._id,
+            priority,
+            pinned
           });
-          return getTaskforEmployeeById(_id);
+          return getTaskforEmployeeById(res.insertedId);
         }
-      }
-
-      const res = await createTask({
-        empId,
-        completionDate,
-        status,
-        title,
-        description,
-        type,
-        assigneeId: user._id,
-      });
-
-      return getTaskforEmployeeById(res.insertedId);
+      
     },
 
     deleteTask: async (_root, { id }, { user }) => {

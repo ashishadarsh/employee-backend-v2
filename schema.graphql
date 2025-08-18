@@ -88,6 +88,8 @@ input createTaskInput {
     title: String!
     description: String!
     type: String!
+    pinned: Boolean
+    priority: Boolean
 }
 
 input createUnicastMessageInput {
