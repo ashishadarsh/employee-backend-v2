@@ -101,18 +101,16 @@ export async function signup(userObj) {
   return result; // caller may fetch created doc by insertedId
 }
 
-// Task helpers (kept as in your original)
-export async function getTaskforEmployeeById(id) {
-  return await (await col("tasks")).findOne({ _id: new ObjectId(id) });
+async function deleteTaskFromDb(id) {
+  const _id = typeof id === 'string' ? new ObjectId(id) : id;
+  const res = await (await col('tasks')).deleteOne({ _id });
+  if (res.deletedCount === 0) {
+    throw new Error('Task not found');
+  }
+  return res;
 }
 
-export async function getTaskforEmployee(id) {
-  console.log("Fetching tasks for employee with ID:", id);
-  
-  return await (await col("tasks")).find({ empId: new ObjectId(id) }).toArray();
-}
-
-export async function createTask({ empId, assigneeId, completionDate, status, title, description, type }) {
+async function createTask({ empId, assigneeId, completionDate, status, title, description, type }) {
   const assignedDate = new Date().toISOString().split("T")[0];
   return await (await col("tasks")).insertOne({
     empId: new ObjectId(empId),
@@ -142,3 +140,64 @@ export async function updateTask({ _id, empId, assigneeId, completionDate, statu
     }
   );
 }
+
+async function createMessage(empId, firstName, text) {
+  const date = new Date().toISOString();
+  const collection = await col('messages');
+  const { insertedId } = await collection.insertOne({
+    senderEmpId: empId,
+    senderName: firstName,
+    text,
+    date
+  });
+  return await collection.findOne({ _id: insertedId });
+}
+
+async function createUnicastMessage(text, senderEmpId, receiverEmpId, firstName) {
+  const date = new Date().toISOString();
+  const collection = await col('messages');
+  const { insertedId } = await collection.insertOne({
+    senderEmpId: new ObjectId(senderEmpId),
+    senderName: firstName,
+    text,
+    date,
+    receiverEmpId: new ObjectId(receiverEmpId)
+  });
+  return await collection.findOne({ _id: insertedId });
+}
+
+async function signup({ email, password, firstName, lastName, dob, mobileNo, pan, gender, team, designation, address, address2, city, zip }) {
+  return await (await col('employee')).insertOne({
+    email,
+    password,
+    firstName,
+    lastName,
+    designation,
+    mobileNo,
+    dob,
+    address,
+    gender,
+    pan,
+    address2,
+    city,
+    zip,
+    team
+  });
+}
+
+export {
+  getEmployees,
+  getTaskforEmployee,
+  getTaskforEmployeeById,
+  updateTask,
+  getEmployee,
+  createTask,
+  getEmployeeByEmail,
+  signup,
+  getEmployeesByTeam,
+  getMessages,
+  createMessage,
+  createUnicastMessage,
+  getUnicastMessages,
+  deleteTaskFromDb
+};
