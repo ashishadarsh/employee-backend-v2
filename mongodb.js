@@ -70,19 +70,6 @@ export async function getUnicastMessages(senderEmpId, receiverEmpId) {
   return messages;
 }
 
-export async function createUnicastMessage(text, senderEmpId, receiverEmpId, firstName) {
-  const date = new Date().toISOString();
-  const collection = await col("messages");
-  const { insertedId } = await collection.insertOne({
-    senderEmpId: new ObjectId(senderEmpId),
-    senderName: firstName,
-    text,
-    date,
-    receiverEmpId: new ObjectId(receiverEmpId),
-  });
-  return await collection.findOne({ _id: insertedId });
-}
-
 export async function signup(userObj) {
   const collection = await col("employee");
   const result = await collection.insertOne(userObj);
