@@ -76,22 +76,19 @@ export const resolvers = {
       { user }
     ) => {
       requireAuth(user);
-      if (_id) {
-        const res = await upsertTask({
-            _id,
-            empId,
-            assigneeId: user._id,
-            completionDate,
-            status,
-            title,
-            description,
-            type,
-            priority,
-            pinned
-          });
-          return getTaskforEmployeeById(res.insertedId);
-        }
-      
+    const res = await upsertTask({
+        _id,
+        empId,
+        assigneeId: user._id,
+        completionDate,
+        status,
+        title,
+        description,
+        type,
+        priority,
+        pinned
+        });
+        return getTaskforEmployeeById(res._id);
     },
 
     deleteTask: async (_root, { id }, { user }) => {
