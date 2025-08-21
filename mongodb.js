@@ -81,8 +81,16 @@ async function deleteTaskFromDb(id) {
 
 async function upsertTask({ _id, empId, assigneeId, completionDate, status, title, description, type, priority, pinned, backlog }) {
   const collection = await col("tasks");
-  const assignedDate = new Date().toISOString().split("T")[0];
-
+  let assignedDate;
+  if(_id) {
+    const task = await getTaskforEmployeeById(_id);
+    if (!task) {
+      throw new Error("Task not found");
+    }
+    assignedDate = task.assignedDate;
+  } else {
+    assignedDate = new Date().toISOString().split("T")[0];
+  }
   const filter = _id ? { _id: new ObjectId(_id) } : { _id: new ObjectId() };
 
   const update = {
