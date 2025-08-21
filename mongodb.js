@@ -79,7 +79,7 @@ async function deleteTaskFromDb(id) {
   return res;
 }
 
-async function upsertTask({ _id, empId, assigneeId, completionDate, status, title, description, type, priority, pinned }) {
+async function upsertTask({ _id, empId, assigneeId, completionDate, status, title, description, type, priority, pinned, backlog }) {
   const collection = await col("tasks");
   const assignedDate = new Date().toISOString().split("T")[0];
 
@@ -96,6 +96,7 @@ async function upsertTask({ _id, empId, assigneeId, completionDate, status, titl
       type,
       priority: priority ?? false,
       pinned: pinned ?? false,
+      backlog: backlog ?? false,
       assignedDate,
     },
   };

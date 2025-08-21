@@ -59,6 +59,7 @@ type Task {
     type: String!
     pinned: Boolean
     priority: Boolean
+    backlog: Boolean
 }
 
 type Message {
@@ -90,6 +91,7 @@ input createTaskInput {
     type: String!
     pinned: Boolean
     priority: Boolean
+    backlog: Boolean
 }
 
 input createUnicastMessageInput {

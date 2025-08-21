@@ -72,7 +72,7 @@ export const resolvers = {
   Mutation: {
     createTaskForEmployee: async (
       _root,
-      { input: { _id, empId, completionDate, status, title, description, type, priority, pinned } },
+      { input: { _id, empId, completionDate, status, title, description, type, priority, pinned, backlog } },
       { user }
     ) => {
       requireAuth(user);
@@ -86,7 +86,8 @@ export const resolvers = {
         description,
         type,
         priority,
-        pinned
+        pinned,
+        backlog
         });
         return getTaskforEmployeeById(res._id);
     },
