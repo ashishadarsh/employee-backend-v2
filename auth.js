@@ -11,7 +11,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d"; // Token valid for 1 
 export const authMiddleware = expressjwt({
     algorithms: ['HS256'],
     credentialsRequired: false, // Allow routes without token too
-    secret
+    JWT_SECRET
 });
 
 // Handle user login
@@ -34,7 +34,7 @@ export async function handleLogin(req, res) {
         }
 
         const claims = { sub: user._id, email: user.email };
-        const token = jwt.sign(claims, secret, { expiresIn: tokenExpiry });
+        const token = jwt.sign(claims, secret, { expiresIn: JWT_EXPIRES_IN });
 
         res.json({ token, user: { id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
     } catch (error) {
@@ -81,7 +81,7 @@ export async function handleSignUp(req, res) {
         });
 
         const claims = { sub: newUser._id, email: newUser.email };
-        const token = jwt.sign(claims, secret, { expiresIn: tokenExpiry });
+        const token = jwt.sign(claims, secret, { expiresIn: JWT_EXPIRES_IN });
 
         res.status(201).json({ token, user: { id: newUser._id, email: newUser.email, firstName: newUser.firstName, lastName: newUser.lastName } });
     } catch (error) {
