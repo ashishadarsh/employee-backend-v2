@@ -81,40 +81,86 @@ async function deleteTaskFromDb(id) {
   return res;
 }
 
-async function upsertTask({ _id, empId, assigneeId, completionDate, status, title, description, type, priority, pinned, backlog }) {
+async function upsertTask({
+  _id,
+  empId,
+  assigneeId,
+  completionDate,
+  status,
+  title,
+  description,
+  type,
+  priority,
+  pinned,
+  backlog
+}) {
   const collection = await col("tasks");
   let assignedDate;
-  if(_id) {
-    const task = await getTaskforEmployeeById(_id);
-    if (!task) {
-      throw new Error("Task not found");
-    }
+  let task;
+  if (_id) {
+    task = await getTaskforEmployeeById(_id);
+    if (!task) throw new Error("Task not found");
     assignedDate = task.assignedDate;
   } else {
     assignedDate = new Date().toISOString().split("T")[0];
   }
+  
+  if(task && (task.priority !== priority || task.pinned !== pinned || task.backlog !== backlog)) {
+    // If priority, pinned, or backlog changed, reset status
+    status = [];
+  } else if( task && task.status[task.status.length - 1].value === status[0].value) { 
+    status = [];
+  }
+
   const filter = _id ? { _id: new ObjectId(_id) } : { _id: new ObjectId() };
 
-  const update = {
-    $set: {
-      empId: new ObjectId(empId),
-      assigneeId: new ObjectId(assigneeId),
-      completionDate,
-      status,
-      title,
-      description,
-      type,
-      priority: priority ?? false,
-      pinned: pinned ?? false,
-      backlog: backlog ?? false,
-      assignedDate,
-    },
-  };
+  // Normalize status: always an array of objects
+  let normalizedStatus = [];
+  if (Array.isArray(status)) {
+    normalizedStatus = status.map(s => {
+      // If s has value & updatedAt, keep it, otherwise add updatedAt
+      if (!s.updatedAt) s.updatedAt = new Date().toISOString();
+      return s;
+    });
+  } else if (typeof status === "string" && status.trim() !== "") {
+    normalizedStatus = [{ value: status, updatedAt: new Date().toISOString() }];
+  }
+  // if empty string or null → leave as []
+
+  const update = _id
+    ? {
+        $set: {
+          empId: new ObjectId(empId),
+          assigneeId: new ObjectId(assigneeId),
+          completionDate,
+          title,
+          description,
+          type,
+          priority: priority ?? false,
+          pinned: pinned ?? false,
+          backlog: backlog ?? false,
+          assignedDate,
+        },
+        $push: { status: { $each: normalizedStatus } }, // <-- push multiple without nesting
+      }
+    : {
+        $set: {
+          empId: new ObjectId(empId),
+          assigneeId: new ObjectId(assigneeId),
+          completionDate,
+          title,
+          description,
+          type,
+          priority: priority ?? false,
+          pinned: pinned ?? false,
+          backlog: backlog ?? false,
+          assignedDate,
+          status: normalizedStatus, // <-- already array, no extra nesting
+        },
+      };
 
   const options = { returnDocument: "after", upsert: true };
-
   return await collection.findOneAndUpdate(filter, update, options);
-  r
 }
 
 
