@@ -34,7 +34,7 @@ export async function handleLogin(req, res) {
         }
 
         const claims = { sub: user._id, email: user.email };
-        const token = jwt.sign(claims, secret, { expiresIn: JWT_EXPIRES_IN });
+        const token = jwt.sign(claims, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
         res.json({ token, user: { id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
     } catch (error) {
@@ -81,7 +81,7 @@ export async function handleSignUp(req, res) {
         });
 
         const claims = { sub: newUser._id, email: newUser.email };
-        const token = jwt.sign(claims, secret, { expiresIn: JWT_EXPIRES_IN });
+        const token = jwt.sign(claims, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
         res.status(201).json({ token, user: { id: newUser._id, email: newUser.email, firstName: newUser.firstName, lastName: newUser.lastName } });
     } catch (error) {
