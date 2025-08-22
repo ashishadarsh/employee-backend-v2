@@ -50,6 +50,7 @@ type Employee {
 type Task {
     _id: ID
     empId: ID!
+    tags: [String!]
     assignedDate: String
     completionDate: String
     status: [StatusHistory!]
@@ -90,6 +91,7 @@ scalar JSON
 input createTaskInput {
     _id: ID
     empId: ID!
+    tags: [String!]
     completionDate: String!
     status: [StatusHistoryInput!]
     assigneeId: ID
