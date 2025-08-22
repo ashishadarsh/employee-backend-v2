@@ -82,6 +82,7 @@ async function deleteTaskFromDb(id) {
 async function upsertTask({
   _id,
   empId,
+  tags,
   assigneeId,
   completionDate,
   status,
@@ -90,7 +91,7 @@ async function upsertTask({
   type,
   priority,
   pinned,
-  backlog
+  backlog,
 }) {
   const collection = await col("tasks");
   let assignedDate;
@@ -131,6 +132,7 @@ async function upsertTask({
           empId: new ObjectId(empId),
           assigneeId: new ObjectId(assigneeId),
           completionDate,
+          tags,
           title,
           description,
           type,
@@ -147,6 +149,7 @@ async function upsertTask({
           assigneeId: new ObjectId(assigneeId),
           completionDate,
           title,
+          tags,
           description,
           type,
           priority: priority ?? false,
