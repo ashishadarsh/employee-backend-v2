@@ -10,8 +10,8 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d"; // Token valid for 1 
 // Middleware to authenticate JWT token
 export const authMiddleware = expressjwt({
     algorithms: ['HS256'],
-    credentialsRequired: true, // Allow routes without token too
-    JWT_SECRET
+    credentialsRequired: false, // Allow routes without token too
+    secret: JWT_SECRET
 });
 
 // Handle user login
